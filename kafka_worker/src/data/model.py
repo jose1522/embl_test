@@ -1,25 +1,26 @@
 from connection import engine
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Float
+from sqlalchemy.event import listen
+from sqlalchemy.schema import FetchedValue
 from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Float, DDL
+
 
 Base = declarative_base()
 
 
 class BaseEntity(Base):
     __abstract__ = True
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, FetchedValue(), primary_key=True)
     created_on = Column(DateTime, default=datetime.now())
+    last_modified_on = Column(DateTime)
     active = Column(Boolean, default=True)
-
-    def delete(self):
-        self.active = False
 
 
 class BaseDim(BaseEntity):
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
-    value = Column(String, nullable=False, unique=True)
+    value = Column(String, FetchedValue(), nullable=False, unique=True)
 
 
 class Phase(BaseDim):
@@ -54,10 +55,10 @@ class Organism(BaseDim):
 
 class Molecule(BaseEntity):
     __tablename__ = "molecule"
-    name = Column(String, nullable=False, unique=True, index=True)
-    max_phase_id = Column(Integer, ForeignKey('phase.id'), nullable=False)
-    structure = Column(String, nullable=False, unique=True)
-    inchi_key = Column(String, nullable=False, unique=True)
+    name = Column(String, FetchedValue(), nullable=False, unique=True, index=True)
+    max_phase_id = Column(Integer, FetchedValue(), ForeignKey('phase.id'), nullable=False)
+    structure = Column(String, FetchedValue(), nullable=False, unique=True)
+    inchi_key = Column(String, FetchedValue(), nullable=False, unique=True)
 
     max_phase = relationship("Phase", back_populates="molecules")
     activities = relationship("Activity", back_populates="molecule")
@@ -65,8 +66,8 @@ class Molecule(BaseEntity):
 
 class Target(BaseEntity):
     __tablename__ = "target"
-    name = Column(String, nullable=False, unique=True, index=True)
-    organism_id = Column(Integer, ForeignKey("organism.id"), nullable=False)
+    name = Column(String, FetchedValue(), nullable=False, unique=True, index=True)
+    organism_id = Column(Integer, FetchedValue(), ForeignKey("organism.id"), nullable=False)
 
     organism = relationship("Organism", back_populates="targets")
     activities = relationship("Activity", back_populates="target")
@@ -74,11 +75,11 @@ class Target(BaseEntity):
 
 class Activity(BaseEntity):
     __tablename__ = "activity"
-    activity_type_id = Column(Integer, ForeignKey("activity_type.id"), nullable=False)
-    unit_id = Column(Integer, ForeignKey("unit.id"), nullable=False)
-    relation_id = Column(Integer, ForeignKey("relation.id"))
-    molecule_id = Column(Integer, ForeignKey("molecule.id"), nullable=False, index=True)
-    target_id = Column(Integer, ForeignKey("target.id"), nullable=False, index=True)
+    activity_type_id = Column(Integer, FetchedValue(), ForeignKey("activity_type.id"), nullable=False)
+    unit_id = Column(Integer, FetchedValue(), ForeignKey("unit.id"), nullable=False)
+    relation_id = Column(Integer, FetchedValue(), ForeignKey("relation.id"))
+    molecule_id = Column(Integer, FetchedValue(), ForeignKey("molecule.id"), nullable=False, index=True)
+    target_id = Column(Integer, FetchedValue(), ForeignKey("target.id"), nullable=False, index=True)
     value = Column(Float, nullable=False)
 
     activity_type = relationship("Type", back_populates="activities")
@@ -88,9 +89,29 @@ class Activity(BaseEntity):
     target = relationship("Target", back_populates="activities")
 
 
+def generate_update_trigger(table_name: str) -> str:
+    return f"""CREATE TRIGGER update_date_{table_name} 
+    BEFORE UPDATE 
+    ON {table_name} 
+    FOR EACH ROW 
+    BEGIN 
+    UPDATE {table_name} SET last_modified_on = datetime('now') WHERE id = new.id;
+    END;"""
+
+
+all_tables = [Phase, Type, Unit, Relation, Organism, Molecule, Target, Activity]
+
+
+def register_update_triggers():
+    for table in all_tables:
+        ddl = DDL(generate_update_trigger(table.__tablename__))
+        listen(table.__table__, "after_create", ddl)
+
+
 def create_database():
     Base.metadata.create_all(engine)
 
 
 if __name__ == '__main__':
+    register_update_triggers()
     create_database()
