@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "loggers": {
+    "": {
+      "handlers": ["consoleHandler"],
+      "level": "DEBUG",
+      "propagate": false
+    },
+    "kafka-worker-controller": {
+      "handlers": ["consoleHandler"],
+      "level": "DEBUG",
+      "propagate": false
+    },
+    "kafka-worker-agent": {
+      "handlers": ["consoleHandler"],
+      "level": "DEBUG",
+      "propagate": false
+    }
+  },
+  "handlers": {
+    "consoleHandler": {
+      "level": "DEBUG",
+      "formatter": "simple",
+      "class": "logging.StreamHandler",
+      "stream": "ext://sys.stdout"
+    },
+    "fileHandler": {
+      "level": "DEBUG",
+      "formatter": "json",
+      "class": "logging.StreamHandler",
+      "stream": "ext://sys.stdout"
+    }
+  },
+  "formatters": {
+    "simple": {
+      "class": "logging.Formatter",
+      "datefmt": "%Y-%m-%d, %I:%M:%S",
+      "format": "%(levelname)-8s %(asctime)-3s: %(module)-15s %(funcName)s:%(lineno)-2s: %(message)s"
+    },
+    "json": {
+      "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+      "datefmt": "%Y-%m-%d, %I:%M:%S",
+      "format": "%(asctime)s %(process)d %(thread)d %(name)s %(filename)s %(lineno)s %(funcName) %(levelname)s %(message)s"
+    }
+  }
+}

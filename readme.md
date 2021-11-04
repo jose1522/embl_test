@@ -2,7 +2,7 @@
 1. Install the latest version of Docker Desktop into your workstation
 1. Clone this repository to your documents
 1. Open a terminal and navigate to the folder where the project is
-1. Run the command `docker compose -d --build up`
+1. Run the command `make run`
 
 # Notes
 ### Database
@@ -12,7 +12,10 @@
 - Update trigger added to the database. This could potentially be expanded to include a column to register the user that
 made the last change
 
-
+### Messaging platform
+- Kafka was chosen due to its scalability and performance
+- Kafka also allows multiple consumer groups to subscribe to the same topic, without having to republish the message
+  (like RabbitMQ)
 
 ### Kafka Worker
 - Limited to 1 worker due to usage of sqlite. SQLite blocks the file when writing, so there's no benefit in adding more

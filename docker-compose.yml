@@ -1,24 +1,58 @@
 version: '3.9'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:5.2.5
+    container_name: zookeeper
     environment:
-      ZOOKEEPER_CLIENT_PORT: {ZOOKEEPER_CLIENT_PORT}
+      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT}
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - {ZOOKEPER_PORT}:2181
+      - ${ZOOKEPER_PORT}:2181
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:5.2.5
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
-      - {BROKER_PORT}:29092
+      - 9092:9092
+      - ${BROKER_PORT}:29092
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:{ZOOKEEPER_CLIENT_PORT}
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_BROKER_RACK: "r1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_CLIENT_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://kafka:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+
+  kafka-setup:
+      image: confluentinc/cp-kafka:5.2.5
+      hostname: kafka-setup
+      container_name: kafka-setup
+      depends_on:
+        - kafka
+      volumes:
+        - ./kafka_setup/entrypoint.sh:/entrypoint.sh
+      entrypoint: ["/bin/sh", "./entrypoint.sh"]
+      healthcheck:
+        test: ["CMD-SHELL","bash", "-c", "'kafka-topics --topic tasks --describe --zookeeper zookeeper:2181'"]
+        interval: 2s
+        timeout: 2s
+        retries: 15
+      environment:
+        KAFKA_BROKER_ID: ignored
+        KAFKA_ZOOKEEPER_CONNECT: ignored
+
+  kafka-worker:
+    build:
+      dockerfile: kafka_worker.Dockerfile
+      context: ./
+    image: kafka-worker
+    container_name: kafka-worker
+    entrypoint: ["faust","-A","main","worker", "-l", "info"]
+    environment:
+      BROKER_URL: kafka://kafka:29092
+    depends_on:
+      kafka-setup:
+        condition: service_healthy

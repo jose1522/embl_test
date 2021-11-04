@@ -1,9 +1,12 @@
 from typing import List
-from consumer.model import RawData
+from logging import getLogger
 from sqlalchemy import select
+from task.model import RawData
 from data.connection import engine
 from sqlalchemy.orm import Session
 from data.model import BaseEntity, Phase, Unit, Type, Relation, Organism, Molecule, Activity, Target
+
+logger = getLogger('kafka-worker-controller')
 
 
 class Upsert:
@@ -36,9 +39,12 @@ class Upsert:
     def execute(self):
         result = self._session.execute(self._select()).first()
         if result:
+            logger.debug(f'Item already present in table {self._table.__name__}')
             result = self._update(result[0])
+            logger.debug(f'Updated from table {self._table.__name__}')
         else:
             result = self._insert()
+            logger.debug(f'Inserted item in table {self._table.__name__}')
             self._session.add(result)
         return result
 
@@ -57,43 +63,53 @@ class Controller:
         self._session.close()
 
     def __process_entity(self, table, name, lookup_column, update_columns: List[str] = None):
-        data = getattr(self._data, name)
-        upsert = Upsert(table, data, lookup_column, self._session, update_columns)
-        result = upsert.execute()
-        setattr(self._data, name, result)
-        self._session.commit()
+        try:
+            data = getattr(self._data, name)
+            upsert = Upsert(table, data, lookup_column, self._session, update_columns)
+            result = upsert.execute()
+            setattr(self._data, name, result)
+            self._session.commit()
+        except Exception as e:
+            logger.error(f"Could not process {name}: {str()}")
+            raise
 
     def process_phase(self):
+        logger.debug("processing phase")
         lookup_column = "value"
         table = Phase
         name = "phase"
         self.__process_entity(table, name, lookup_column)
 
     def process_type(self):
+        logger.debug("processing type")
         lookup_column = "value"
         table = Type
         name = "type"
         self.__process_entity(table, name, lookup_column)
 
     def process_unit(self):
+        logger.debug("processing value")
         lookup_column = "value"
         table = Unit
         name = "unit"
         self.__process_entity(table, name, lookup_column)
 
     def process_relation(self):
+        logger.debug("processing relation")
         lookup_column = "value"
         table = Relation
         name = "relation"
         self.__process_entity(table, name, lookup_column)
 
     def process_organism(self):
+        logger.debug("processing organism")
         lookup_column = "value"
         table = Organism
         name = "organism"
         self.__process_entity(table, name, lookup_column)
 
     def process_molecule(self):
+        logger.debug("processing molecule")
         lookup_column = "id"
         table = Molecule
         name = "molecule"
@@ -101,6 +117,7 @@ class Controller:
         self.__process_entity(table, name, lookup_column, update_columns)
 
     def process_target(self):
+        logger.debug("processing target")
         lookup_column = "id"
         table = Target
         name = "target"
@@ -108,6 +125,7 @@ class Controller:
         self.__process_entity(table, name, lookup_column, update_columns)
 
     def process_activity(self):
+        logger.debug("processing activity")
         lookup_column = "id"
         table = Activity
         name = "activity"
