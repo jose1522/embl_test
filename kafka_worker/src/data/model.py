@@ -1,4 +1,4 @@
-from connection import engine
+from data.connection import engine
 from datetime import datetime
 from sqlalchemy.event import listen
 from sqlalchemy.schema import FetchedValue

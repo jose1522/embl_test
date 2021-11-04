@@ -1,5 +1,5 @@
 from typing import List
-from task.model import Task
+from consumer.model import RawData
 from sqlalchemy import select
 from data.connection import engine
 from sqlalchemy.orm import Session
@@ -45,7 +45,7 @@ class Upsert:
 
 class Controller:
 
-    def __init__(self, data: Task):
+    def __init__(self, data: RawData):
         self._data = data
         self._session = Session(engine)
 

@@ -1,9 +1,10 @@
+from faust import Record
 from typing import Optional
 from dataclasses import dataclass
 
 
 @dataclass
-class Task:
+class RawData:
     activity_id: int
     activity_type: str
     activity_units: str
@@ -101,3 +102,9 @@ class Task:
     @activity.setter
     def activity(self, value):
         pass
+
+
+class Task(Record):
+    rows: int
+    current: int
+    data: dict

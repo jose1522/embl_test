@@ -15,5 +15,7 @@ made the last change
 
 
 ### Kafka Worker
-- Limited to 1 worker due to usage of sqlite.
-- Architecture is designed with a production database (like PostgreSQL) in mind.
+- Limited to 1 worker due to usage of sqlite. SQLite blocks the file when writing, so there's no benefit in adding more
+  workers
+- There is one worker per container so that it can be scaled by using `--scale` flag and be more transparent than using 
+  processes inside the container
