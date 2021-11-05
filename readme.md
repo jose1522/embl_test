@@ -22,3 +22,9 @@ made the last change
   workers
 - There is one worker per container so that it can be scaled by using `--scale` flag and be more transparent than using 
   processes inside the container
+  
+### FTP Client
+- I chose Vaex to read the csv file because it reads it in chunks and stores it into a temp hdf5 file on disk, trading
+  RAM for physical storage. This allows it to potentially handle files larger than RAM size. Vaex also offers performance 
+  gains over pandas, so it's better suited for this task overall. 
+- 
