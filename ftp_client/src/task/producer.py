@@ -39,6 +39,7 @@ class Producer:
 
     async def send_task(self, task: Task):
         task = json.dumps(task.asdict(), cls=NpEncoder)
+        task = task.encode('utf-8')
         if self.topic:
             await self.topic.send(key=task, value=task)
 
@@ -47,7 +48,7 @@ class Producer:
         logger.debug(f"Processing {self.__rows} rows...")
         async for i in trange(self.__rows):
             row = self.row_to_dict(i)
-            task = Task(rows=self.__rows, current=i, data=row)
+            task = Task(rows=self.__rows, current=i+1, data=row)
             await self.send_task(task)
 
 

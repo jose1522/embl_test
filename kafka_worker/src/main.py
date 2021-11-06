@@ -1,5 +1,5 @@
-from task.model import RawData
 from logging import getLogger
+from task.model import RawData
 from task import app, tasks_topic
 from data.controller import Controller
 
@@ -10,14 +10,12 @@ logger = getLogger("kafka-worker-agent")
 async def task(tasks):
     async for task in tasks:
         logger.info(f"Received tasks: row {task.current} out of {task.rows}")
-        try:
-            raw_data = RawData(**task.data)
-            controller = Controller(raw_data)
+
+        raw_data = RawData(**task.data)
+        with Controller(raw_data) as controller:
             controller.main()
-            if task.current == task.rows:
-                pass
-        except Exception as e:
-            logger.error(f"Something went wrong...{str(e)}")
+        if task.current == task.rows:
+            pass
 
 if __name__ == '__main__':
     app.main()

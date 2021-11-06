@@ -4,8 +4,7 @@ from task.model import Task
 from log import config_as_dict
 
 
-app = faust.App(autodiscover=True,
-                id="kafka_worker",
+app = faust.App(id="kafka_worker",
                 broker=variables.BROKER_URL,
                 logging_config=config_as_dict())
 

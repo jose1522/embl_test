@@ -8,7 +8,7 @@ logger = getLogger("kafka-worker-agent")
 
 
 @app.agent(extractions_topic)
-async def task(extractions):
+async def extraction(extractions):
     async for extraction in extractions:
         logger.info("Received new task from queue")
         try:
