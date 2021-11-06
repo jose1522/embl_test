@@ -314,3 +314,9 @@ pyvenv.cfg
 pip-selfcheck.json
 
 .DS_Store
+
+# Vaex
+ftp_client/**/*.hdf5
+ftp_client/**/*.lock
+ftp_client/**/*.csv.yaml
+vaex/

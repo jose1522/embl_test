@@ -1,1 +1,5 @@
 vaex
+faust
+requests
+tdqm
+python-json-logger

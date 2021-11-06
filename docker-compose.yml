@@ -40,6 +40,7 @@ services:
         interval: 2s
         timeout: 2s
         retries: 15
+        start_period: 40s
       environment:
         KAFKA_BROKER_ID: ignored
         KAFKA_ZOOKEEPER_CONNECT: ignored
@@ -56,3 +57,28 @@ services:
     depends_on:
       kafka-setup:
         condition: service_healthy
+
+  ftp-client:
+    build:
+      dockerfile: ftp_client.Dockerfile
+      context: ./
+    image: ftp-client
+    container_name: ftp-client
+    entrypoint: [ "faust","-A","main","worker", "-l", "info" ]
+    environment:
+      BROKER_URL: kafka://kafka:29092
+    depends_on:
+      kafka-setup:
+        condition: service_healthy
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+      - KAFKA_CLUSTERS_0_READONLY=true
