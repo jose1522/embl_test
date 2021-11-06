@@ -2,3 +2,4 @@ faust
 sqlalchemy
 python-dotenv
 python-json-logger
+redis

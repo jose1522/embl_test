@@ -1,5 +1,6 @@
 version: '3.9'
 services:
+
   zookeeper:
     image: confluentinc/cp-zookeeper:5.2.5
     container_name: zookeeper
@@ -45,6 +46,19 @@ services:
         KAFKA_BROKER_ID: ignored
         KAFKA_ZOOKEEPER_CONNECT: ignored
 
+  kafka-worker-cache:
+    image: "redis:alpine"
+    container_name: kafka-worker-cache
+    healthcheck:
+      test: [ "CMD", "redis-cli","ping" ]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    ports:
+      - ${REDIS_PORT}:6379
+    environment:
+      - REDIS_REPLICATION_MODE=master
+
   kafka-worker:
     build:
       dockerfile: kafka_worker.Dockerfile
@@ -54,8 +68,15 @@ services:
     entrypoint: ["faust","-A","main","worker", "-l", "info"]
     environment:
       BROKER_URL: kafka://kafka:29092
+      UPSERT_RECORDS: "false"
+      REDIS_HOST: kafka-worker-cache
+      REDIS_PORT: ${REDIS_PORT}
+      COMMIT_EVERY_X_ROWS: 1000
+      VERBOSE_DB: "false"
     depends_on:
       kafka-setup:
+        condition: service_healthy
+      kafka-worker-cache:
         condition: service_healthy
 
   ftp-client:

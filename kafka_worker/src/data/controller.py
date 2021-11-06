@@ -1,12 +1,22 @@
+import logging
 from typing import List
-from logging import getLogger
+from conf import variables
 from sqlalchemy import select
 from task.model import RawData
-from data.connection import engine
+from util.caching import Cache
 from sqlalchemy.orm import Session
 from data.model import BaseEntity, Phase, Unit, Type, Relation, Organism, Molecule, Activity, Target
 
-logger = getLogger('kafka-worker-controller')
+logger = logging.getLogger('kafka-worker-controller')
+logger.setLevel(logging.INFO)
+
+
+class ControllerError(Exception):
+    pass
+
+
+class UpsertError(Exception):
+    pass
 
 
 class Upsert:
@@ -14,12 +24,15 @@ class Upsert:
                  data: dict,
                  lookup_column: str,
                  session: Session,
-                 update_columns: List[str] = None):
+                 cache: Cache,
+                 update_columns: List[str] = None
+                 ):
         self._table = table
         self._data = data
         self._lookup_column = lookup_column
         self._update_columns = update_columns
         self._session = session
+        self._cache = cache
 
     def _select(self):
         stmt = select(self._table)\
@@ -36,42 +49,52 @@ class Upsert:
             setattr(result, column, self._data[column])
         return result
 
-    def execute(self):
+    def get_existing(self):
         result = self._session.execute(self._select()).first()
         if result:
-            logger.debug(f'Item already present in table {self._table.__name__}')
-            result = self._update(result[0])
-            logger.debug(f'Updated from table {self._table.__name__}')
-        else:
-            result = self._insert()
-            logger.debug(f'Inserted item in table {self._table.__name__}')
-            self._session.add(result)
+            result = result[0]
         return result
+
+    def in_cache(self):
+        key = f"{self._table.__name__}: {self._data[self._lookup_column]}"
+        return self._cache.exists(key)
+
+    def execute(self):
+        try:
+            record = self.get_existing()
+            in_cache = self.in_cache()
+            if record or self.in_cache():
+                logger.debug(f'Item {self._data} from table {self._table.__name__} already seen')
+                if record:
+                    if variables.UPSERT_RECORDS:
+                        record = self._update(record)
+                        logger.debug(f'Updated {self._data} from table {self._table.__name__}')
+                else:  # it's in cache only, so we need to create a new record object
+                    record = self._insert()
+            else:
+                record = self._insert()
+                logger.debug(f'Inserted item {self._data} in table {self._table.__name__}')
+                self._session.add(record)
+            return record
+        except Exception as e:
+            raise UpsertError(str(e))
 
 
 class Controller:
 
-    def __init__(self, data: RawData):
+    def __init__(self, data: RawData, session, cache: Cache):
         self._data = data
-        self._session = Session(engine)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._session.commit()
-        self._session.close()
+        self._session = session
+        self._cache = cache
 
     def __process_entity(self, table, name, lookup_column, update_columns: List[str] = None):
         try:
             data = getattr(self._data, name)
-            upsert = Upsert(table, data, lookup_column, self._session, update_columns)
+            upsert = Upsert(table, data, lookup_column, self._session, self._cache, update_columns)
             result = upsert.execute()
             setattr(self._data, name, result)
-            self._session.commit()
         except Exception as e:
-            logger.error(f"Could not process {name}: {str()}")
-            raise
+            raise ControllerError(f"Could not process {name}: {str(e)}. Data: {getattr(self._data, name)}")
 
     def process_phase(self):
         logger.debug("processing phase")
@@ -141,3 +164,39 @@ class Controller:
         self.process_molecule()
         self.process_target()
         self.process_activity()
+
+
+if __name__ == '__main__':
+    from util.caching import Cache
+    from data.connection import session
+    examples = [{'molecule_id':1,
+  'activity_id': 804532,
+  'activity_type': 'Ki',
+  'activity_units': 'nM',
+  'activity_value': 0.55,
+  'activity_relation': '=',
+  'molecule_name': 'PRAZOSIN',
+  'molecule_max_phase': 4,
+  'molecule_structure': 'COc1cc2nc(N3CCN(C(=O)c4ccco4)CC3)nc(N)c2cc1OC',
+  'molecule_inchi_key': 'IENZQIKPVFGBNW-UHFFFAOYSA-N',
+  'target_id': 128,
+  'target_name': 'Alpha-1b adrenergic receptor',
+  'target_organism': 'Homo sapiens'},
+               {'molecule_id':2,
+  'activity_id': 990231,
+  'activity_type': 'Ki',
+  'activity_units': 'nM',
+  'activity_value': 0.28,
+  'activity_relation': '=',
+  'molecule_name': 'PRAZOSIN',
+  'molecule_max_phase': 4,
+  'molecule_structure': 'COc1cc2nc(N3CCN(C(=O)c4ccco4)CC3)nc(N)c2cc1OC',
+  'molecule_inchi_key': 'IENZQIKPVFGBNW-UHFFFAOYSA-N',
+  'target_id': 128,
+  'target_name': 'Alpha-1b adrenergic receptor',
+  'target_organism': 'Homo sapiens'}]
+    cache = Cache()
+    for example in examples:
+        raw_data = RawData(**example)
+        controller = Controller(raw_data,session, cache)
+        controller.main()

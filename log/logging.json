@@ -12,7 +12,7 @@
       "propagate": false
     },
     "kafka-worker-agent": {
-      "handlers": ["consoleHandler"],
+      "handlers": ["consoleHandler", "fileHandler"],
       "level": "DEBUG",
       "propagate": false
     },
@@ -28,6 +28,13 @@
       "formatter": "simple",
       "class": "logging.StreamHandler",
       "stream": "ext://sys.stdout"
+    },
+    "fileHandler": {
+      "class": "logging.FileHandler",
+      "level": "DEBUG",
+      "formatter": "simple",
+      "mode": "w",
+      "filename": "worker-logs.txt"
     }
   },
   "formatters": {

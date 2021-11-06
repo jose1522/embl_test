@@ -1,4 +1,5 @@
 from conf import variables
+from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, create_mock_engine
 
 
@@ -14,3 +15,4 @@ def generate_engine(mock=False):
 
 
 engine = generate_engine()
+session = Session(engine, autoflush=False)

@@ -50,6 +50,7 @@ class Producer:
             row = self.row_to_dict(i)
             task = Task(rows=self.__rows, current=i+1, data=row)
             await self.send_task(task)
+        logger.debug("Finished processing data")
 
 
 if __name__ == '__main__':

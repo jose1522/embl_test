@@ -22,6 +22,9 @@ class BaseDim(BaseEntity):
     id = Column(Integer, primary_key=True, autoincrement=True)
     value = Column(String, FetchedValue(), nullable=False, unique=True)
 
+    def __repr__(self):
+        return f"{type(self)}<id: {self.id}; value: {self.value}>"
+
 
 class Phase(BaseDim):
     __tablename__ = 'phase'
@@ -63,6 +66,9 @@ class Molecule(BaseEntity):
     max_phase = relationship("Phase", back_populates="molecules")
     activities = relationship("Activity", back_populates="molecule")
 
+    def __repr__(self):
+        return f"{type(self)}<id: {self.id}>; name: {self.name}; inchi_key: {self.inchi_key}>"
+
 
 class Target(BaseEntity):
     __tablename__ = "target"
@@ -71,6 +77,9 @@ class Target(BaseEntity):
 
     organism = relationship("Organism", back_populates="targets")
     activities = relationship("Activity", back_populates="target")
+
+    def __repr__(self):
+        return f"{type(self)}<id: {self.id}>; name: {self.name}>"
 
 
 class Activity(BaseEntity):
@@ -87,6 +96,9 @@ class Activity(BaseEntity):
     relation = relationship("Relation", back_populates="activities")
     molecule = relationship("Molecule", back_populates="activities")
     target = relationship("Target", back_populates="activities")
+
+    def __repr__(self):
+        return f"{type(self)}<id: {self.id}; value: {self.value};>"
 
 
 def generate_update_trigger(table_name: str) -> str:
