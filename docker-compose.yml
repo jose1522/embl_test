@@ -71,7 +71,7 @@ services:
       UPSERT_RECORDS: "false"
       REDIS_HOST: kafka-worker-cache
       REDIS_PORT: ${REDIS_PORT}
-      COMMIT_EVERY_X_ROWS: 1000
+      COMMIT_EVERY_X_ROWS: 30000
       VERBOSE_DB: "false"
     depends_on:
       kafka-setup:

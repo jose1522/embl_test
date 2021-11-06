@@ -1,29 +1,33 @@
-from data.connection import engine
 from datetime import datetime
+from data.connection import engine
 from sqlalchemy.event import listen
 from sqlalchemy.schema import FetchedValue
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Float, DDL
-
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Float, DDL, or_, select
 
 Base = declarative_base()
 
 
 class BaseEntity(Base):
     __abstract__ = True
-    id = Column(Integer, FetchedValue(), primary_key=True)
+    id = Column(Integer, FetchedValue(), primary_key=True, sqlite_on_conflict_primary_key='IGNORE')
     created_on = Column(DateTime, default=datetime.now())
     last_modified_on = Column(DateTime)
     active = Column(Boolean, default=True)
 
+    @classmethod
+    def select_query(cls, **kwargs):
+        return select(cls).where(cls.id == kwargs['id'])
+
 
 class BaseDim(BaseEntity):
     __abstract__ = True
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    value = Column(String, FetchedValue(), nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, sqlite_on_conflict_primary_key='IGNORE')
+    value = Column(String, FetchedValue(), nullable=False, unique=True, sqlite_on_conflict_unique='IGNORE')
 
-    def __repr__(self):
-        return f"{type(self)}<id: {self.id}; value: {self.value}>"
+    @classmethod
+    def select_query(cls, **kwargs):
+        return select(cls).where(cls.id == kwargs['value'])
 
 
 class Phase(BaseDim):
@@ -46,6 +50,7 @@ class Unit(BaseDim):
 
 class Relation(BaseDim):
     __tablename__ = 'relation'
+    value = Column(String, FetchedValue(), unique=True, sqlite_on_conflict_unique='IGNORE')
 
     activities = relationship("Activity", back_populates="relation")
 
@@ -58,28 +63,29 @@ class Organism(BaseDim):
 
 class Molecule(BaseEntity):
     __tablename__ = "molecule"
-    name = Column(String, FetchedValue(), nullable=False, unique=True, index=True)
+    name = Column(String, FetchedValue(), nullable=False, index=True)
     max_phase_id = Column(Integer, FetchedValue(), ForeignKey('phase.id'), nullable=False)
-    structure = Column(String, FetchedValue(), nullable=False, unique=True)
-    inchi_key = Column(String, FetchedValue(), nullable=False, unique=True)
+    structure = Column(String, FetchedValue(), nullable=False)
+    inchi_key = Column(String, FetchedValue(), nullable=False, unique=True, sqlite_on_conflict_unique='IGNORE')
 
     max_phase = relationship("Phase", back_populates="molecules")
     activities = relationship("Activity", back_populates="molecule")
 
-    def __repr__(self):
-        return f"{type(self)}<id: {self.id}>; name: {self.name}; inchi_key: {self.inchi_key}>"
+    @classmethod
+    def select_query(cls, **kwargs):
+        return select(cls).where(or_(
+            cls.id == kwargs['id'],
+            cls.inchi_key == kwargs['inchi_key']
+        ))
 
 
 class Target(BaseEntity):
     __tablename__ = "target"
-    name = Column(String, FetchedValue(), nullable=False, unique=True, index=True)
+    name = Column(String, FetchedValue(), nullable=False, index=True)
     organism_id = Column(Integer, FetchedValue(), ForeignKey("organism.id"), nullable=False)
 
     organism = relationship("Organism", back_populates="targets")
     activities = relationship("Activity", back_populates="target")
-
-    def __repr__(self):
-        return f"{type(self)}<id: {self.id}>; name: {self.name}>"
 
 
 class Activity(BaseEntity):
@@ -96,9 +102,6 @@ class Activity(BaseEntity):
     relation = relationship("Relation", back_populates="activities")
     molecule = relationship("Molecule", back_populates="activities")
     target = relationship("Target", back_populates="activities")
-
-    def __repr__(self):
-        return f"{type(self)}<id: {self.id}; value: {self.value};>"
 
 
 def generate_update_trigger(table_name: str) -> str:

@@ -8,5 +8,8 @@ remove:
 	docker-compose rm --force -v
 stop:
 	docker-compose stop
+copy_kafka_worker_files:
+	docker cp kafka-worker:/app/worker-logs.txt .
+	docker cp kafka-worker:/app/storage/embl.db .
 run: start_kafka wait start_workers
 clean: stop remove
