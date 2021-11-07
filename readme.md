@@ -46,8 +46,8 @@ made the last change
   processes inside the container
   
 ### Redis
-- Redis was added to cache sqlalchemy objects and accelerate the processing of the CSV rows. This reduced time by 9x 
-  (from 240ms per row to 27ms)
+- Redis was added to cache sqlalchemy objects and accelerate the processing of the messages. This helps when the latency
+  between the database and the worker is greater than between the worker and the cache.
 - The cache is flushed up periodically so that it doesn't consume too much RAM.
 
 ### FTP Client
