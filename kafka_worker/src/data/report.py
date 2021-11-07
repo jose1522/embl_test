@@ -45,6 +45,7 @@ class Report:
         self.data = [[name, self._get_row_count(name)] for name in self._get_tables()]
         self._create_report()
 
+
 if __name__ == '__main__':
     report = Report()
     report.run()

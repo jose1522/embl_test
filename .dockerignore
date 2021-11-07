@@ -1,3 +1,4 @@
 # Created by .ignore support plugin (hsz.mobi)
 kafka_worker/src/storage
 ftp_client/src/files
+kafka_worker/src/reports
