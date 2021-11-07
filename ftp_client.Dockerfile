@@ -1,4 +1,5 @@
 FROM python:3.9.7-slim
+RUN apt update && apt install -y netcat
 RUN mkdir ./app
 WORKDIR ./app
 COPY ftp_client/requirements.txt ./

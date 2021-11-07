@@ -38,9 +38,10 @@ services:
         - kafka
       volumes:
         - ./kafka_setup/entrypoint.sh:/entrypoint.sh
+        - ./kafka_setup/healthcheck.sh:/healthcheck.sh
       entrypoint: ["/bin/sh", "./entrypoint.sh"]
       healthcheck:
-        test: ["CMD-SHELL","bash", "-c", "'kafka-topics --topic tasks --describe --zookeeper zookeeper:2181'"]
+        test: ["CMD-SHELL","bash", "healthcheck.sh"]
         interval: 2s
         timeout: 2s
         retries: 15
@@ -54,7 +55,7 @@ services:
     container_name: kafka-worker-cache
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "redis-cli","ping" ]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 2s
       timeout: 2s
       retries: 15
@@ -94,8 +95,10 @@ services:
       context: ./
     image: ftp-client
     container_name: ftp-client
-    entrypoint: [ "faust","-A","main","worker", "-l", "info" ]
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     restart: unless-stopped
+    volumes:
+    - ./ftp_client/entrypoint.sh:/entrypoint.sh
     environment:
       BROKER_URL: kafka://kafka:29092
       EXTRACTION_URL: ${EXTRACTION_URL}
