@@ -1,4 +1,6 @@
 import json
+
+import task.agent
 from conf import variables
 from logging import getLogger
 from task import app, extractions_topic
@@ -25,7 +27,7 @@ async def extraction(extractions):
             logger.error(f"Something went wrong...{str(e)}")
 
 
-@app.task
+@task.agent.task
 async def publish_extraction():
     logger.info("Sending message...")
     try:

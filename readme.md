@@ -1,11 +1,15 @@
 # Requirements
 1. The Latest version of Docker
 1. At least 16 GB of RAM
+1. At least 4 CPU cores
 
 #### For Windows:
 1. Download and install Chocolatey
 1. Install Make via Chocolatey `choco install make`
 1. I'm not too familiar with Windows, but I've read online that you might need to use PowerShell for this
+
+#### For Mac
+1. Make sure to provide Docker with at least 4 GB of RAM and 4 CPU cores.
 
 # Instructions
 1. Clone this repository to your documents
