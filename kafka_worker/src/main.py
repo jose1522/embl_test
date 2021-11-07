@@ -1,5 +1,6 @@
 import logging
 from conf import variables
+from data.report import Report
 from util.caching import cache
 from task.model import RawData
 from task import app, tasks_topic
@@ -25,6 +26,8 @@ async def task(tasks):
             if task.current == task.rows:
                 logger.info(f"Committed all operations to data base.")
                 session.commit()
+                report = Report()
+                report.run()
         except Exception as e:
             logger.error(f"Something went wrong...{str(e)}")
 if __name__ == '__main__':
