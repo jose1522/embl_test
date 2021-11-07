@@ -4,6 +4,7 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:5.2.5
     container_name: zookeeper
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT}
       ZOOKEEPER_TICK_TIME: 2000
@@ -13,6 +14,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:5.2.5
     container_name: kafka
+    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:
@@ -31,6 +33,7 @@ services:
       image: confluentinc/cp-kafka:5.2.5
       hostname: kafka-setup
       container_name: kafka-setup
+      restart: unless-stopped
       depends_on:
         - kafka
       volumes:
@@ -49,6 +52,7 @@ services:
   kafka-worker-cache:
     image: "redis:alpine"
     container_name: kafka-worker-cache
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli","ping" ]
       interval: 2s
@@ -65,7 +69,8 @@ services:
       context: ./
     image: kafka-worker
     container_name: kafka-worker
-    entrypoint: [ "faust","-A","main","worker", "-l", "info" ]
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    restart: unless-stopped
     environment:
       BROKER_URL: kafka://kafka:29092
       UPSERT_RECORDS: "false"
@@ -74,7 +79,8 @@ services:
       COMMIT_EVERY_X_ROWS: 1000
       VERBOSE_DB: "false"
     volumes:
-    - ./reports:/app/reports
+      - ./reports:/app/reports
+      - ./kafka_worker/entrypoint.sh:/entrypoint.sh
     depends_on:
       kafka-setup:
         condition: service_healthy
@@ -88,6 +94,7 @@ services:
     image: ftp-client
     container_name: ftp-client
     entrypoint: [ "faust","-A","main","worker", "-l", "info" ]
+    restart: unless-stopped
     environment:
       BROKER_URL: kafka://kafka:29092
       EXTRACTION_URL: ${EXTRACTION_URL}
@@ -100,7 +107,7 @@ services:
     container_name: kafka-ui
     ports:
       - ${KAFKA_UI_PORT}:8080
-    restart: always
+    restart: unless-stopped
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
