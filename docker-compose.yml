@@ -87,9 +87,10 @@ services:
       context: ./
     image: ftp-client
     container_name: ftp-client
-    entrypoint: [ "faust","-A","main","worker", "-l", "info" ]
+    entrypoint: [ "faust","-A","main","worker", "-l", "debug" ]
     environment:
       BROKER_URL: kafka://kafka:29092
+      EXTRACTION_URL: ${EXTRACTION_URL}
     depends_on:
       kafka-setup:
         condition: service_healthy

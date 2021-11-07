@@ -320,3 +320,7 @@ ftp_client/**/*.hdf5
 ftp_client/**/*.lock
 ftp_client/**/*.csv.yaml
 vaex/
+
+
+# reports
+reports/

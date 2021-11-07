@@ -1,4 +1,5 @@
-from task.model import Server
+import json
+from conf import variables
 from logging import getLogger
 from task import app, extractions_topic
 from task.producer import Producer, ProducerError
@@ -23,6 +24,16 @@ async def extraction(extractions):
         except Exception as e:
             logger.error(f"Something went wrong...{str(e)}")
 
+
+@app.task
+async def publish_extraction():
+    logger.info("Sending message...")
+    try:
+        message = json.dumps({"url": variables.EXTRACTION_URL})
+        message = message.encode('utf-8')
+        await extractions_topic.send(key=message, value=message)
+    except Exception as e:
+        logger.error(f"Something went wrong producing a message: {str(e)}")
 
 if __name__ == '__main__':
     app.main()

@@ -3,3 +3,4 @@ faust
 requests
 tdqm
 python-json-logger
+python-dotenv
