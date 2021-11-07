@@ -6,6 +6,7 @@ from log import config_as_dict
 
 app = faust.App(id="kafka_worker",
                 broker=variables.BROKER_URL,
+                broker_commit_every=100,
                 logging_config=config_as_dict())
 
 tasks_topic = app.topic('tasks', value_type=Task)
