@@ -76,8 +76,9 @@ services:
       UPSERT_RECORDS: "false"
       REDIS_HOST: kafka-worker-cache
       REDIS_PORT: ${REDIS_PORT}
-      COMMIT_EVERY_X_ROWS: 100
       VERBOSE_DB: "false"
+      ENABLE_CACHING: "false"
+      CACHING_SIZE: 100
     volumes:
       - ./reports:/app/reports
       - ./kafka_worker/entrypoint.sh:/entrypoint.sh

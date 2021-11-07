@@ -63,25 +63,34 @@ class Upsert:
         key = f"{self._table.__name__};{self._query}"
         return self._cache.keep(key, record)
 
+    def __execute(self):
+        record = self.get_existing()
+        if record:
+            logger.debug(f'Item {self._data} from table {self._table.__name__} already seen')
+            if variables.UPSERT_RECORDS:
+                record = self._update(record)
+                logger.debug(f'Updated {self._data} from table {self._table.__name__}')
+        else:  # Insert the new record
+            record = self._create_record()
+            logger.debug(f'Inserted item {self._data} in table {self._table.__name__}')
+            self._session.add(record)
+        return record
+
+    def __execute_with_caching(self):
+        cached_record = self.get_cached_record()
+        if cached_record:
+            return cached_record
+        else:
+            record = self.__execute()
+            self.cache_record(record)
+            return record
+
     def execute(self):
         try:
-            cached_record = self.get_cached_record()
-            if cached_record:
-                return cached_record
+            if variables.ENABLE_CACHING:
+                return self.__execute_with_caching()
             else:
-                record = self.get_existing()
-                if record:
-                    logger.debug(f'Item {self._data} from table {self._table.__name__} already seen')
-                    if variables.UPSERT_RECORDS:
-                        record = self._update(record)
-                        logger.debug(f'Updated {self._data} from table {self._table.__name__}')
-
-                else:  # Insert the new record
-                    record = self._create_record()
-                    logger.debug(f'Inserted item {self._data} in table {self._table.__name__}')
-                    self._session.add(record)
-                    self.cache_record(record)
-                return record
+                return self.__execute()
         except Exception as e:
             self._session.rollback()
             raise UpsertError(str(e))
@@ -89,7 +98,7 @@ class Upsert:
 
 class Controller:
 
-    def __init__(self, data: RawData, session, cache: Cache):
+    def __init__(self, data: RawData, session, cache: Cache = None):
         self._data = data
         self._session = session
         self._cache = cache
