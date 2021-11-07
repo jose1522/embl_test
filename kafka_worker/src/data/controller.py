@@ -66,7 +66,7 @@ class Upsert:
     def __execute(self):
         record = self.get_existing()
         if record:
-            logger.debug(f'Item {self._data} from table {self._table.__name__} already seen')
+            logger.debug(f'Item {self._data} from table {self._table.__name__} already in database')
             if variables.UPSERT_RECORDS:
                 record = self._update(record)
                 logger.debug(f'Updated {self._data} from table {self._table.__name__}')
@@ -79,6 +79,7 @@ class Upsert:
     def __execute_with_caching(self):
         cached_record = self.get_cached_record()
         if cached_record:
+            logger.debug(f'Item {self._data} from table {self._table.__name__} already in cache')
             return cached_record
         else:
             record = self.__execute()
