@@ -47,6 +47,7 @@ services:
         retries: 15
         start_period: 40s
       environment:
+        BROKER_HOST: kafka
         KAFKA_BROKER_ID: ignored
         KAFKA_ZOOKEEPER_CONNECT: ignored
 
