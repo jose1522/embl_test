@@ -6,10 +6,16 @@
 #### For Windows:
 1. Download and install Chocolatey
 1. Install Make via Chocolatey `choco install make`
-1. I'm not too familiar with Windows, but I've read online that you might need to use PowerShell for this
+1. ***Run the crlf_to_ls.ps1 script***
 
 #### For Mac
 1. Make sure to provide Docker with at least 4 GB of RAM and 4 CPU cores.
+
+# Architecture
+I implemented a pub/sub architecture based on Kafka and python. The producer (ftp-client) downloads the CSV file and
+sends a message to kafka per each row of on the file. The messages are then consumed by the kafka worker and a report is 
+generated once it finishes processing the file. The messages include the properties "total rows" and "current row" to
+signal kafka worker when it should create the report.
 
 # Instructions
 1. Clone this repository to your documents
@@ -31,9 +37,12 @@ made the last change
 
 ### Kafka
 - Kafka was chosen due to its scalability and performance
-- Messages are stored in disk, so there's no loss of data
+- Messages are stored in disk, so there's no loss of data.
+- Topics can be configured to expire after n seconds, and to start from either beginning of end for new consumer groups.
 - Kafka also allows multiple consumer groups to subscribe to the same topic, without having to republish the message
   (like RabbitMQ)
+- When a worker fails to process a message, it can be republished to another topic with its own worker group for better 
+  exception handling.
   
 ### Kafka UI
 - You can visualize topics and consumers by using the UI. 
@@ -42,8 +51,8 @@ made the last change
 ### Kafka Worker
 - Limited to 1 worker due to usage of sqlite. SQLite blocks the file when writing, so there's no benefit in adding more
   workers
-- There is one worker per container so that it can be scaled by using `--scale` flag and be more transparent than using 
-  processes inside the container
+- I used faust to consume messages from Kafka
+- Operations can be cached in-between transactions for better performance (more about this in the Redis section)
   
 ### Redis
 - Redis was added to cache sqlalchemy objects and accelerate the processing of the messages. This helps when the latency
