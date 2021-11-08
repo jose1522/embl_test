@@ -25,17 +25,20 @@ class Downloader:
         return self.server.url.split('/')[-1].replace(" ", "_")
 
     def run(self):
-        response = requests.get(self.server.url, stream=True)
-        if response.ok:
-            logger.info(f"Downloaded file {self.filename} to path: {self.path}")
-            with open(self.path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024 * 8):
-                    if chunk:
-                        f.write(chunk)
-                        f.flush()
-                        fsync(f.fileno())
-        else:
-            raise DownloaderException(f"Download failed: status code {response.status_code}:\t{response.text}")
+        try:
+            response = requests.get(self.server.url, stream=True)
+            if response.ok:
+                logger.info(f"Downloaded file {self.filename} to path: {self.path}")
+                with open(self.path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=1024 * 8):
+                        if chunk:
+                            f.write(chunk)
+                            f.flush()
+                            fsync(f.fileno())
+            else:
+                raise DownloaderException(f"Download failed: status code {response.status_code}:\t{response.text}")
+        except Exception as e:
+            raise DownloaderException(f"Download failed: {str(e)}")
 
 
 if __name__ == '__main__':

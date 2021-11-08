@@ -9,4 +9,3 @@ app = faust.App(id="ftp_client",
                 logging_config=config_as_dict())
 
 extractions_topic = app.topic('extractions', value_type=Server)
-
