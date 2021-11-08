@@ -13,7 +13,6 @@ async def produce_message(message=None):
     await extractions_topic.send(key=message, value=message)
 
 
-
 @app.agent(extractions_topic)
 async def extraction(extractions):
     async for extraction in extractions:
@@ -25,8 +24,8 @@ async def extraction(extractions):
             await producer.run()
         except DownloaderException as e:
             logger.error(str(e))
-            await produce_message(extraction.url)
             await sleep(30)
+            await produce_message(extraction.url)
         except ProducerError as e:
             logger.error(str(e))
         except Exception as e:
