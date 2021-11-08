@@ -12,7 +12,7 @@
 1. Make sure to provide Docker with at least 4 GB of RAM and 4 CPU cores.
 
 # Architecture
-![Architecture Diagram](/assets/EMBL Architecture.jpg "Architecture Diagram")
+![Architecture Diagram](https://github.com/jose1522/embl_test/blob/master/assets/EMBL Architecture.jpg?raw=true)
 I implemented a pub/sub architecture based on Kafka and python. The producer (ftp-client) downloads the CSV file and
 sends a message to kafka per each row of on the file. The messages are then consumed by the kafka worker and a report is 
 generated once it finishes processing the file. The messages include the properties "total rows" and "current row" to
@@ -30,7 +30,7 @@ signal kafka worker when it should create the report.
 - Feel free to modify the ports in case you are already using any of them
 
 ### Database
-![ER Diagram](/assets/EMBL-EBI database ER model.jpg "ER Diagram")
+![ER Diagram](https://github.com/jose1522/embl_test/blob/master/assets/EMBL-EBI database ER model.jpg?raw=true)
 - 'Active' column added to all tables for soft delete. No trigger created for this because I want to be able to actually 
   delete files, but be able to perform soft delete through data layer.
 - Update trigger added to the database. This could potentially be expanded to include a column to register the user that
