@@ -13,6 +13,7 @@
 
 # Architecture
 ![Architecture Diagram](https://github.com/jose1522/embl_test/blob/master/assets/architecture.jpg?raw=true)
+
 I implemented a pub/sub architecture based on Kafka and python. The producer (ftp-client) downloads the CSV file and
 sends a message to kafka per each row of on the file. The messages are then consumed by the kafka worker and a report is 
 generated once it finishes processing the file. The messages include the properties "total rows" and "current row" to
