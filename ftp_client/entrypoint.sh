@@ -5,4 +5,4 @@ until nc -vz 'kafka' 29092; do
   sleep 2
 done
 
-faust --datadir=./worker-data -A main -l info worker
+faust -A main -l info worker
