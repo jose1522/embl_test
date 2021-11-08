@@ -1,7 +1,7 @@
 from datetime import datetime
-from data.connection import engine
 from sqlalchemy.event import listen
 from sqlalchemy.schema import FetchedValue
+from data.connection import engine as default_engine
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Float, DDL, or_, select
 
@@ -123,8 +123,8 @@ def register_update_triggers():
         listen(table.__table__, "after_create", ddl)
 
 
-def create_database():
-    Base.metadata.create_all(engine)
+def create_database(engine=None):
+    Base.metadata.create_all(engine or default_engine)
 
 
 if __name__ == '__main__':
